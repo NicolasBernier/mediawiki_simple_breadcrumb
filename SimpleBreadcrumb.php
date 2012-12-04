@@ -326,7 +326,7 @@ class SimpleBreadCrumb
 		$parentParser = clone $parser;
 		self::$parsingParent = true;
 		self::$foundParentPage = null;
-		$parentParser->parse($pageRow['old_text'], new Title(), new ParserOptions())->getText();
+		$parentParser->parse($pageRow['old_text'], new Title(), new ParserOptions());
 		self::$parsingParent = false;
 
 		// Add parent page to cache
