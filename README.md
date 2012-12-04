@@ -21,11 +21,10 @@ You should not add more than one breadcrumb tag in your page.
 Installation
 ------------
 
-* Copy SimpleBreadcrumb.php and SimpleBreadcrumb.i18n.php in your extensions directory. 
-* Edit LocalSettings.php to include the extension :
+Copy SimpleBreadcrumb.php and SimpleBreadcrumb.i18n.php in your extensions directory. 
+Edit LocalSettings.php to include the extension:
 
 	// Simple Breadcrumb
-
 	require_once('extensions/SimpleBreadcrumb.php');
 
 
