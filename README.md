@@ -25,6 +25,7 @@ Installation
 * Edit LocalSettings.php to include the extension :
 
 	// Simple Breadcrumb
+
 	require_once('extensions/SimpleBreadcrumb.php');
 
 
