@@ -362,8 +362,8 @@ class SimpleBreadCrumb
 			$text = str_replace($matches[0], '', $text);
 
 			// Remove the resulting empty lines at the beginning and the end of the markup
-			$text = preg_replace("@^(<p>(<br[^>]*>|[\r\n\t ]*)*</p>|(<br[^>]*>|[\r\n\t ]*)*)@sim", '', $text);
-			$text = preg_replace("@(<p>(<br[^>]*>|[\r\n\t ]*)*</p>|(<br[^>]*>|[\r\n\t ]*)*)$@sim", '', $text);
+			$text = preg_replace("@^(<p>(<br[^>]*>|[\r\n\t ]*)*</p>|(<br[^>]*>|[\r\n\t ]+))@i", '', $text);
+			$text = preg_replace("@(<p>(<br[^>]*>|[\r\n\t ]*)*</p>|(<br[^>]*>|[\r\n\t ]+))$@i", '', $text);
 		}
 
 		return true;
