@@ -150,7 +150,7 @@ class SimpleBreadCrumb
 
 		$breadcrumb = array();
 
-		$parser->disableCache();
+		$parser->getOutput()->updateCacheExpiry(0);
 
 		// Add current page, with self link if activated
 		if (self::$selfLink)
