@@ -299,7 +299,7 @@ class SimpleBreadCrumb
 			return self::$breadcrumbCache[$page['full_name']];
 
 		// Load get parent page from DB
-		$result = wfGetDB(DB_SLAVE)->select(
+		$result = wfGetDB(DB_REPLICA)->select(
 			array('revision', 'text', 'page'),
 			'old_text',
 			array(
@@ -319,8 +319,8 @@ class SimpleBreadCrumb
 			return null;
 
 		// Fetch page code
-		$pageRow = wfGetDB(DB_SLAVE)->fetchRow($result);
-		wfGetDB(DB_SLAVE)->freeResult($result);
+		$pageRow = wfGetDB(DB_REPLICA)->fetchRow($result);
+		wfGetDB(DB_REPLICA)->freeResult($result);
 
 		// Parse page code and get parent using static vars
 		$parentParser = clone $parser;
