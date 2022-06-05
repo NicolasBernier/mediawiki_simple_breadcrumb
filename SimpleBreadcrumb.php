@@ -19,6 +19,8 @@ $wgExtensionCredits['parserhook'][] = array(
 	'description' => 'Parser function implementing a hierarchical breadcumb.'
 );
 
+use MediaWiki\MediaWikiServices;
+
 // Enable extension hooks
 $wgHooks['ParserFirstCallInit'][]  = 'SimpleBreadCrumb::init';
 $wgHooks['ParserBeforeTidy'][]     = 'SimpleBreadCrumb::onParserBeforeTidy';
@@ -299,28 +301,33 @@ class SimpleBreadCrumb
 			return self::$breadcrumbCache[$page['full_name']];
 
 		// Load get parent page from DB
-		$result = wfGetDB(DB_REPLICA)->select(
-			array('revision', 'text', 'page'),
-			'old_text',
-			array(
-				'page_title'     => $page['name'],
-				'page_namespace' => $page['namespace_id']
-			),
-			__METHOD__,
-			array('ORDER BY' => 'rev_id DESC LIMIT 1'),
-			array(
-				'text'     => array('LEFT JOIN', 'old_id = rev_text_id'),
-				'revision' => array('LEFT JOIN', 'rev_page = page_id')
-			)
-		);
-
+		$lb = MediaWikiServices::getInstance()->getDBLoadBalancer();
+		$dbr = $lb->getConnectionRef(DB_REPLICA);
+		$tables = [ 'page', 'revision', 'text', 'slots', 'content' ];
+		$vars = 'old_text';
+		$conds = [
+			'page_title'     => $page['name'],
+			'page_namespace' => $page['namespace_id'],
+			'rev_page = page_id',
+			'rev_id = slot_revision_id',
+			'slot_content_id = content_id',
+			$dbr->buildIntegerCast( 'SUBSTR(content_address, 4)' ) . ' = old_id'
+		];
+		
+		$options = [
+			'ORDER BY' => 'rev_id DESC',
+			'LIMIT' => 1
+		];
+		
+		$result = $dbr->select( $tables, $vars, $conds, __METHOD__, $options );
+		
 		// Page not found
 		if (empty($result))
 			return null;
 
 		// Fetch page code
-		$pageRow = wfGetDB(DB_REPLICA)->fetchRow($result);
-		wfGetDB(DB_REPLICA)->freeResult($result);
+		$pageRow = getConnectionRef(DB_REPLICA)->fetchRow($result);
+		getConnectionRef(DB_REPLICA)->freeResult($result);
 
 		// Parse page code and get parent using static vars
 		$parentParser = clone $parser;
