@@ -23,7 +23,7 @@ use MediaWiki\MediaWikiServices;
 
 // Enable extension hooks
 $wgHooks['ParserFirstCallInit'][]  = 'SimpleBreadCrumb::init';
-$wgHooks['ParserBeforeTidy'][]     = 'SimpleBreadCrumb::onParserBeforeTidy';
+$wgHooks['ParserAfterTidy'][]     = 'SimpleBreadCrumb::onParserAfterTidy';
 $wgHooks['OutputPageBeforeHTML'][] = 'SimpleBreadCrumb::onOutputPageBeforeHtml';
 $wgHooks['EditFormPreloadText'][]  = array('SimpleBreadCrumb::editFormSetParent');
 
@@ -320,20 +320,21 @@ class SimpleBreadCrumb
 		];
 		
 		$result = $dbr->select( $tables, $vars, $conds, __METHOD__, $options );
-		
+
 		// Page not found
 		if (empty($result))
 			return null;
 
 		// Fetch page code
-		$pageRow = getConnectionRef(DB_REPLICA)->fetchRow($result);
-		getConnectionRef(DB_REPLICA)->freeResult($result);
+		$pageRow = $lb->getConnectionRef(DB_REPLICA)->fetchRow($result);
+		$lb->getConnectionRef(DB_REPLICA)->freeResult($result);
 
 		// Parse page code and get parent using static vars
 		$parentParser = clone $parser;
 		self::$parsingParent = true;
 		self::$foundParentPage = null;
-		$parentParser->parse($pageRow['old_text'], new Title(), new ParserOptions());
+		$t = Title::newFromText( __METHOD__ );
+		$parentParser->parse($pageRow['old_text'], $t, new ParserOptions());
 		self::$parsingParent = false;
 
 		// Add parent page to cache
@@ -357,7 +358,7 @@ class SimpleBreadCrumb
 	 * @param string $text
 	 * @return boolean
 	 */
-	public static function onParserBeforeTidy(Parser $parser, &$text)
+	public static function onParserAfterTidy(Parser $parser, &$text)
 	{
 		// Breadcrumb tag found
 		if (preg_match('@<div[^>]* id=[\'"]breadcrumb[\'"].+</div>@mUis', $text, $matches))
