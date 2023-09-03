@@ -217,7 +217,7 @@ class SimpleBreadCrumb
 			// Valid namespace
 			if (!empty($namespaceId))
 			{
-				$namespace = new MWNamespace();
+				$namespace = new NamespaceInfo();
 				$pageData['name']         = str_replace(' ', '_', trim($matches[3]));
 				$pageData['namespace']    = $strNamespace;
 				$pageData['namespace_id'] = $namespaceId;
@@ -262,7 +262,7 @@ class SimpleBreadCrumb
 				if (strtolower($ns) == strtolower($namespaceName))
 					return $nsId;
 
-		$namespace = new MWNamespace();
+		$namespace = new NamespaceInfo();
 		return $namespace->getCanonicalIndex(strtolower($namespaceName));
 	}
 
