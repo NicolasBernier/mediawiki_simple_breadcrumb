@@ -20,6 +20,7 @@ $wgExtensionCredits['parserhook'][] = array(
 );
 
 use MediaWiki\MediaWikiServices;
+use NamespaceInfo;
 
 // Enable extension hooks
 $wgHooks['ParserFirstCallInit'][]  = 'SimpleBreadCrumb::init';
@@ -217,10 +218,15 @@ class SimpleBreadCrumb
 			// Valid namespace
 			if (!empty($namespaceId))
 			{
+				$namespaceInfo = MediaWikiServices::getInstance()->getNamespaceInfo();
+				
 				$pageData['name']         = str_replace(' ', '_', trim($matches[3]));
 				$pageData['namespace']    = $strNamespace;
 				$pageData['namespace_id'] = $namespaceId;
-				$pageData['full_name']    = NamespaceInfo::getCanonicalName($namespaceId) . ':' . trim($matches[3]); // Use canonical name since $strNamespace may be localized
+				
+				// Get the canonical namespace name using NamespaceInfo
+				$canonicalNamespace = $namespaceInfo->getCanonicalName($namespaceId);
+				$pageData['full_name']    = $canonicalNamespace . ':' . trim($matches[3]); // Use canonical name since $strNamespace may be localized
 			}
 			// Invalid namespace ID: the colons are just part of the page name
 			else
@@ -255,12 +261,20 @@ class SimpleBreadCrumb
 	public static function getNamespaceId($namespaceName)
 	{
 		global $wgContLang;
-
+		
 		if (!empty($wgContLang->mNamespaceIds))
 			foreach($wgContLang->mNamespaceIds as $ns => $nsId)
 				if (strtolower($ns) == strtolower($namespaceName))
-					return $nsId;	
-		return NamespaceInfo::getCanonicalIndex( strtolower( $namespaceName ) );
+					return $nsId;
+
+		// Get the ServiceContainer object
+		$services = MediaWikiServices::getInstance();
+
+		// Get the NamespaceInfo object
+		$namespaceInfo = MediaWikiServices::getInstance()->getNamespaceInfo();
+
+		// Now, you can use $namespaceInfo to get the canonical index
+		return $namespaceInfo->getCanonicalIndex(strtolower($namespaceName));
 	}
 
 	/**
