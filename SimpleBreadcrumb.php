@@ -217,11 +217,10 @@ class SimpleBreadCrumb
 			// Valid namespace
 			if (!empty($namespaceId))
 			{
-				$namespace = new NamespaceInfo();
 				$pageData['name']         = str_replace(' ', '_', trim($matches[3]));
 				$pageData['namespace']    = $strNamespace;
 				$pageData['namespace_id'] = $namespaceId;
-				$pageData['full_name']    = $namespace->getCanonicalName($namespaceId) . ':' . trim($matches[3]); // Use canonical name since $strNamespace may be localized
+				$pageData['full_name']    = NamespaceInfo::getCanonicalName($namespaceId) . ':' . trim($matches[3]); // Use canonical name since $strNamespace may be localized
 			}
 			// Invalid namespace ID: the colons are just part of the page name
 			else
@@ -260,10 +259,8 @@ class SimpleBreadCrumb
 		if (!empty($wgContLang->mNamespaceIds))
 			foreach($wgContLang->mNamespaceIds as $ns => $nsId)
 				if (strtolower($ns) == strtolower($namespaceName))
-					return $nsId;
-
-		$namespace = new NamespaceInfo();
-		return $namespace->getCanonicalIndex(strtolower($namespaceName));
+					return $nsId;	
+		return NamespaceInfo::getCanonicalIndex( strtolower( $namespaceName ) );
 	}
 
 	/**
