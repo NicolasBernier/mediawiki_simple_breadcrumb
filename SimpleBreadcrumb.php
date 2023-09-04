@@ -20,7 +20,8 @@ $wgExtensionCredits['parserhook'][] = array(
 );
 
 use MediaWiki\MediaWikiServices;
-use NamespaceInfo;
+use MediaWiki\Title\Title;
+//use MediaWiki\NamespaceInfo;
 
 // Enable extension hooks
 $wgHooks['ParserFirstCallInit'][]  = 'SimpleBreadCrumb::init';
@@ -154,7 +155,7 @@ class SimpleBreadCrumb
 		$breadcrumb = array();
 
 		$parser->getOutput()->updateCacheExpiry(0);
-
+				
 		// Add current page, with self link if activated
 		if (self::$selfLink)
 			$breadcrumb[$currentPage['full_name']] = self::getPageLink($currentPage);
@@ -223,7 +224,7 @@ class SimpleBreadCrumb
 				$pageData['name']         = str_replace(' ', '_', trim($matches[3]));
 				$pageData['namespace']    = $strNamespace;
 				$pageData['namespace_id'] = $namespaceId;
-				
+								
 				// Get the canonical namespace name using NamespaceInfo
 				$canonicalNamespace = $namespaceInfo->getCanonicalName($namespaceId);
 				$pageData['full_name']    = $canonicalNamespace . ':' . trim($matches[3]); // Use canonical name since $strNamespace may be localized
@@ -337,15 +338,24 @@ class SimpleBreadCrumb
 			return null;
 
 		// Fetch page code
-		$pageRow = $lb->getConnectionRef(DB_REPLICA)->fetchRow($result);
-		$lb->getConnectionRef(DB_REPLICA)->freeResult($result);
+		$pageRow = $result->fetchRow();
+		$result->free();
 
 		// Parse page code and get parent using static vars
 		$parentParser = clone $parser;
 		self::$parsingParent = true;
 		self::$foundParentPage = null;
 		$t = Title::newFromText( __METHOD__ );
-		$parentParser->parse($pageRow['old_text'], $t, new ParserOptions());
+		
+		// Get the global UserIdentity object
+		$userIdentity = MediaWikiServices::getInstance()->getUserFactory()->newAnonymous();
+
+		// Create ParserOptions with the UserIdentity object
+		$parserOptions = new ParserOptions($userIdentity);
+
+		// Now you can use $parserOptions in your parse function
+		$parentParser->parse($pageRow['old_text'], $t, $parserOptions);
+		//$parentParser->parse($pageRow['old_text'], $t, new ParserOptions());
 		self::$parsingParent = false;
 
 		// Add parent page to cache
