@@ -210,10 +210,13 @@ class Hooks {
 	 * @return bool
 	 */
 	public static function onOutputPageParserOutput( OutputPage $out, ParserOutput $parserOutput ) {
-		// Add some style
 		$breadcrumbHtmlString = $parserOutput->getExtensionData( 'simplebreadcrumb' );
-		$out->addInlineStyle('#breadcrumb {position:relative; top:-15px; }');
-		$out->addSubtitle( $breadcrumbHtmlString );
+		if(!empty($breadcrumbHtmlString)) {//If there's no breadcrumb for this page, don't do anything (was previously adding a bunch of empty lines on Special:SpecialPages)
+			// Add some style
+			$out->addInlineStyle('#breadcrumb {position:relative; top:-15px; }');
+			// Add the breadcrumb html string
+			$out->addSubtitle( $breadcrumbHtmlString );
+		}
 		return true;
 	}
 		
