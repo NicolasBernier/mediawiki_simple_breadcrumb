@@ -13,7 +13,7 @@ Just add a {{#breadcrumb: }} tag anywhere in your page to set its parent and its
 
 The tag can be used in templates and accepts variables.
 
-	{{#breadcrumb: Category:Releases {{{product}}} | {{{product}}} }}
+	{{#breadcrumb: Category:Releases {{{product}}} | {{SUBPAGENAME}} }}
 
 You should not add more than one breadcrumb tag in your page.
 
@@ -31,8 +31,8 @@ Edit LocalSettings.php to include the extension:
 Configuration
 -------------
 
-The extension offers a bunch of configuration variables that can be overriden in LocalSettings.php after the inclusion of the extension.
+The extension offers these configuration variables that can be overriden in LocalSettings.php after the inclusion of the extension.
 
 	$wgbcdelimiter            = ' &gt; ';     // Breadcrumb delimiter string
 	$wgbcMaxCount             = 5;            // Maximum elements in breadcrumb
-	$wgbcOverflowPrefix       = '&hellip;'; // Prefix when breadcrumb has more elements than fixed limit
+	$wgbcOverflowPrefix       = '&hellip;';   // Prefix when breadcrumb has more elements than fixed limit
