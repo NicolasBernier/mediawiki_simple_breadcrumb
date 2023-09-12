@@ -46,7 +46,7 @@ class Hooks {
 	}
 
 	/**
-	 * Parse the "breadcrumb" parser function.
+	 * Build the "breadcrumb" list.
 	 *
 	 * @param Parser $parser
 	 * @param string $parentPageTitle
