@@ -131,8 +131,11 @@ class Hooks {
 	public static function getAncestorPages($pageTitle, $ancestorPages = []) {
 		// Create a Title object for the page.
 		$title = Title::newFromText($pageTitle);
-		if (!$title->isKnown($pageTitle)) {
-			return null; //This page doesn't exist
+		if (!empty($title)) {
+			if (!$title->isKnown($pageTitle))
+				return null; //This page doesn't exist
+		} else {
+			return null; // $pageTitle isn't a string--or something
 		}
 		
 		// Find if parent is cached
