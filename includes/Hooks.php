@@ -58,7 +58,7 @@ class Hooks {
 		$pagedata = array();
 		$page = $parser->getPage();
 		$pagedata['title'] = $page->getFullText();
-		$pagedata['alias'] = self::parseWikiMarkup(self::sanitizeAlias($alias));
+		$pagedata['alias'] = self::sanitizeAlias($alias);
 		if ($pagedata['title'] == $parentPageTitle) {// If the parent page and the current page are the same, set parent page to null
 			$pagedata['parentTitle'] = null;
 			$parentPageTitle = null;
@@ -204,27 +204,6 @@ class Hooks {
 		);
 
 		self::$breadcrumb = $truncatedBreadcrumb;
-	}
-
-	/**
-	 * Parse italics and bold wiki markup.
-	 *
-	 * @param String $text
-	 * @return String
-	 */
-	private static function parseWikiMarkup($text) {
-		//Have to use "&#39;" because the parser doesn't pass plain apostrophes.
-		$boldpattern = '/&#39;&#39;&#39;(.*?)&#39;&#39;&#39;/';
-		$boldreplacement = '<b>$1</b>';
-		// Convert bold markup ('''text''') to HTML <b> tags
-		$text = preg_replace($boldpattern, $boldreplacement, $text);
-		
-		$italicspattern = '/&#39;&#39;(.*?)&#39;&#39;/';
-		$italicsreplacement = '<i>$1</i>';
-		// Convert italicized markup (''text'') to HTML <i> tags
-		$text = preg_replace($italicspattern, $italicsreplacement, $text);
-
-		return $text;
 	}
 
 	/**
