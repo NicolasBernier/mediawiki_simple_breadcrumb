@@ -52,13 +52,13 @@ class Hooks {
 	 * @param string $parentPageTitle
 	 * @param string|null $alias
 	 */
-	public static function buildBreadcrumb($parser, $parentPageTitle = null, $alias = null) {
+	public static function buildBreadcrumb($parser, $parentPageTitle = null, $alias = null) {		
 		// Process the page title
 		$parentPageTitle = trim($parentPageTitle);
 		$pagedata = array();
 		$page = $parser->getPage();
 		$pagedata['title'] = $page->getFullText();
-		$pagedata['alias'] = self::sanitizeAlias($alias);
+		$pagedata['alias'] = self::parseWikiMarkup(self::sanitizeAlias($alias));
 		if ($pagedata['title'] == $parentPageTitle) {// If the parent page and the current page are the same, set parent page to null
 			$pagedata['parentTitle'] = null;
 			$parentPageTitle = null;
@@ -69,6 +69,10 @@ class Hooks {
 		
 		// Add this page to cache
 		self::loadBreadcrumbCache();
+		
+		// Unset the cached breadcrumb data for the saved page (in case the page title is numeric--PHP would append instead of replacing)
+		unset(self::$breadcrumbCache[$pagedata['title']]);
+		
 		self::$breadcrumbCache[$pagedata['title']] = $pagedata;
 		self::saveBreadcrumbCache();
 		
@@ -174,10 +178,33 @@ class Hooks {
 		}
 		$linkRenderer = MediaWikiServices::getInstance()->getLinkRenderer();
 		// Return link
-		if (!empty($pagedata['alias']))
-			return $linkRenderer->makePreloadedLink($title, $pagedata['alias']);
-		else
+		if (!empty($pagedata['alias'])) {
+			$text = $pagedata['alias'];
+			// Encode the opening and closing <i> and <b> tags to placeholders.
+			$text = str_replace('<i>', '__open_i_tag__', $text);
+			$text = str_replace('</i>', '__close_i_tag__', $text);
+			$text = str_replace('<b>', '__open_b_tag__', $text);
+			$text = str_replace('</b>', '__close_b_tag__', $text);
+			
+			// Encode ampersands (used in html entities) to placeholders--if not, all html entities will have "&#38;" instead of "&"
+			$text = str_replace("&", '__ampersand___placeholder__', $text);			
+
+			// Create the preloaded link with the encoded text.
+			$linkString = $linkRenderer->makePreloadedLink($title, $text);
+
+			// Decode the opening and closing <i> and <b> tags back to their original form.
+			$linkString = str_replace('__open_i_tag__', '<i>', $linkString);
+			$linkString = str_replace('__close_i_tag__', '</i>', $linkString);
+			$linkString = str_replace('__open_b_tag__', '<b>', $linkString);
+			$linkString = str_replace('__close_b_tag__', '</b>', $linkString);
+			
+			// Decode ampersands back to their original form.
+			$linkString = str_replace('__ampersand___placeholder__', "&", $linkString);
+			
+			return $linkString;
+		} else {
 			return $linkRenderer->makePreloadedLink($title);
+		}
 	}
 
 	/**
@@ -207,13 +234,34 @@ class Hooks {
 	}
 
 	/**
+	 * Parse italics and bold wiki markup.
+	 *
+	 * @param String $text
+	 * @return String
+	 */
+	private static function parseWikiMarkup($text) {
+		//Have to use "&#39;" because the parser doesn't pass plain apostrophes.
+		$boldpattern = '/&#39;&#39;&#39;(.*?)&#39;&#39;&#39;/';
+		$boldreplacement = '<b>$1</b>';
+		// Convert bold markup ('''text''') to HTML <b> tags
+		$text = preg_replace($boldpattern, $boldreplacement, $text);
+
+		$italicspattern = '/&#39;&#39;(.*?)&#39;&#39;/';
+		$italicsreplacement = '<i>$1</i>';
+		// Convert italicized markup (''text'') to HTML <i> tags
+		$text = preg_replace($italicspattern, $italicsreplacement, $text);
+
+		return $text;
+	}
+
+	/**
 	 * Inject the breadcrumb HTML into the page output
 	 *
 	 * @param OutputPage $out
 	 * @param ParserOutput $parserOutput
 	 * @return bool
 	 */
-	public static function onOutputPageParserOutput( OutputPage $out, ParserOutput $parserOutput ) {
+	public static function onOutputPageParserOutput( OutputPage $out, ParserOutput $parserOutput ) {		
 		$breadcrumbHtmlString = $parserOutput->getExtensionData( 'simplebreadcrumb' );
 		if(!empty($breadcrumbHtmlString)) {//If there's no breadcrumb for this page, don't do anything (was previously adding a bunch of empty lines on Special:SpecialPages)
 			// Add some style
