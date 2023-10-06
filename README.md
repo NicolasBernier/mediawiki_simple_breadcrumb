@@ -1,7 +1,7 @@
 Mediawiki Simple Breadcrumb
 ===========================
 
-A hieracherical breadcrumb extension for MediaWiki. Implements a {{#breadcrumb: }} tag to set a parent page for each page. The resulting breadcrumb is displayed under the page title.
+A hierarchical breadcrumb extension for MediaWiki. Implements a {{#breadcrumb: }} tag to set a parent page for each page. The resulting breadcrumb is displayed under the page title.
 Tested with MediaWiki version 1.39.5
 
 Usage
