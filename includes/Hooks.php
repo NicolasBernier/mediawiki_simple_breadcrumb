@@ -8,7 +8,7 @@ use OutputPage;
 use Parser;
 use ParserOutput;
 
-class Hooks {	
+class Hooks {
 	/**
 	 * The generated breadcrumb elements
 	 * @var array
@@ -263,44 +263,10 @@ class Hooks {
 	 */
 	public static function onOutputPageParserOutput( OutputPage $out, ParserOutput $parserOutput ) {		
 		$breadcrumbHtmlString = $parserOutput->getExtensionData( 'simplebreadcrumb' );
-		if(!empty($breadcrumbHtmlString)) {//If there's no breadcrumb for this page, don't do anything (was previously adding a bunch of empty lines on Special:SpecialPages)
-			// Add some style
-			$out->addInlineStyle('#breadcrumb {position:relative; top:-15px; }');
+		if(!empty($breadcrumbHtmlString)) {//If there's no breadcrumb for this page, don't do anything
 			// Add the breadcrumb html string
 			$out->addSubtitle( $breadcrumbHtmlString );
 		}
-		return true;
-	}
-		
-	/**
-	 * Occurs after the save page request has been processed.
-	 *
-	 * @param WikiPage $article
-	 * @param User $user
-	 * @param Content $content
-	 * @param string $summary
-	 * @param boolean $isMinor
-	 * @param boolean $isWatch
-	 * @param integer $flags
-	 * @param Revision $revision
-	 * @param Status $status
-	 * @param integer $baseRevId
-	 * @return boolean
-	 */
-	public static function onPageSaveComplete( WikiPage $wikiPage, MediaWiki\User\UserIdentity $user, string $summary, int $flags, MediaWiki\Revision\RevisionRecord $revisionRecord, MediaWiki\Storage\EditResult $editResult ) {
-		// Remove the saved page from the cache to force it to reload from cache next time it's invoked.
-		self::loadBreadcrumbCache();
-		
-		// Determine the saved page's title.
-		$pageTitle = $wikiPage->getTitle()->getFullText();
-
-		// Unset the cached breadcrumb data for the saved page.
-		unset(self::$breadcrumbCache[$pageTitle]);
-		
-		// Save the updated breadcrumb cache.
-		self::saveBreadcrumbCache();
-				
-		// Return true to indicate successful processing.
 		return true;
 	}
 
