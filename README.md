@@ -11,7 +11,7 @@ Just add a {{#breadcrumb: }} tag anywhere in your page to set its parent and its
 
 	{{#breadcrumb: Parent_Page | Alias }}
 
-The alias will replace the page's name in the breadcrumb trails for all ancestor and descendant pages. The page at the top of the hierarchy (i.e., thd page that has no parent) may still be given an alias, which will show up in all the childrens' breadcrumb trails. The top page will not display a breadcrumb. 
+The alias will replace the page's name in the breadcrumb trails for all ancestor and descendant pages, in addition to the current page. The page at the top of the hierarchy (i.e., thd page that has no parent) may still be given an alias, which will show up in all the childrens' breadcrumb trails. The top page will not display a breadcrumb. 
 
 The tag can be used in templates and accepts variables.
 
