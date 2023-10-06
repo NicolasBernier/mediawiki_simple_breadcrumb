@@ -20,8 +20,7 @@
 	},
 	"Hooks": {
 		"ParserFirstCallInit": "MediaWiki\\Extension\\SimpleBreadcrumb\\Hooks::onParserFirstCallInit",
-		"OutputPageParserOutput": "MediaWiki\\Extension\\SimpleBreadcrumb\\Hooks::onOutputPageParserOutput",
-		"PageSaveComplete": "MediaWiki\\Extension\\SimpleBreadcrumb\\Hooks::onPageSaveComplete"
+		"OutputPageParserOutput": "MediaWiki\\Extension\\SimpleBreadcrumb\\Hooks::onOutputPageParserOutput"
 	},
 	"manifest_version": 2
 }
