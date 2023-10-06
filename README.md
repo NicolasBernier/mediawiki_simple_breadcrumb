@@ -2,7 +2,7 @@ Mediawiki Simple Breadcrumb
 ===========================
 
 A hieracherical breadcrumb extension for MediaWiki. Implements a {{#breadcrumb: }} tag to set a parent page for each page. The resulting breadcrumb is displayed under the page title.
-Tested with MediaWiki version 1.39.4
+Tested with MediaWiki version 1.39.5
 
 Usage
 -----
@@ -11,11 +11,13 @@ Just add a {{#breadcrumb: }} tag anywhere in your page to set its parent and its
 
 	{{#breadcrumb: Parent_Page | Alias }}
 
+The alias will replace the page's name in the breadcrumb trails for all ancestor and descendant pages. The page at the top of the hierarchy (i.e., thd page that has no parent) may still be given an alias, which will show up in all the childrens' breadcrumb trails. The top page will not display a breadcrumb. 
+
 The tag can be used in templates and accepts variables.
 
 	{{#breadcrumb: Category:Releases {{{product}}} | {{SUBPAGENAME}} }}
 
-You should not add more than one breadcrumb tag in your page.
+You should not add more than one breadcrumb tag in each page. In experimentation, if there are two breadcrumb tags, the second one is the one that is effective, but this behavior is not tested.
 
 
 Installation
