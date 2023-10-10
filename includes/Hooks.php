@@ -57,6 +57,8 @@ class Hooks {
 		$parentPageTitle = trim($parentPageTitle);
 		$pagedata = array();
 		$page = $parser->getPage();
+		#$pagedata['dbkey'] = $page->getDBkey();
+		$pagedata['pageID'] = $page->getId();
 		$pagedata['title'] = $page->getFullText();
 		$pagedata['alias'] = self::parseWikiMarkup(self::sanitizeAlias($alias));
 		if ($pagedata['title'] == $parentPageTitle) {// If the parent page and the current page are the same, set parent page to null
@@ -68,13 +70,7 @@ class Hooks {
 		$pagedata['link'] = self::getPageLink($page, $pagedata);
 		
 		// Add this page to cache
-		self::loadBreadcrumbCache();
-		
-		// Unset the cached breadcrumb data for the saved page (in case the page title is numeric--PHP would append instead of replacing)
-		unset(self::$breadcrumbCache[$pagedata['title']]);
-		
-		self::$breadcrumbCache[$pagedata['title']] = $pagedata;
-		self::saveBreadcrumbCache();
+		self::saveToBreadcrumbCache($pagedata);
 		
 		//if no parent page is supplied, this is the top level and we don't want to display the breadcrumb.
 		if (empty($parentPageTitle)) {
@@ -87,16 +83,23 @@ class Hooks {
 		else
 			$breadcrumbList[] = $pagedata['title'];
 		
+		$ancestorPages = array();
+		//Add current page to ancestorPages array so we can watch out for loops
+		$ancestorPages[$pagedata['title']] = $pagedata;
 		// Get ancestor pages  
-		$ancestorPages = self::getAncestorPages($parentPageTitle);
+		$ancestorPages = self::getAncestorPages($parentPageTitle, $ancestorPages);
 		
-		if(is_iterable($ancestorPages)){
+		//Remove current page from ancestorPages array (it's already in the $breadcrumbList)
+		unset($ancestorPages[$pagedata['title']]);
+		
+		if (is_iterable($ancestorPages) && count($ancestorPages) > 0) {
 			// Add the ancestor pages to the breadcrumbList array
 			foreach ($ancestorPages as $ancestorPage) {
 				$breadcrumbList[] = $ancestorPage['link'];
 			}
+		} else {
+			return '';
 		}
-		
 		// Reverse the order to get the deepest link first
 		self::$breadcrumb = array_reverse($breadcrumbList, true);
 
@@ -134,19 +137,20 @@ class Hooks {
 	 * @param string $pageTitle The name of the parent page.
 	 * @return array An array of ancestor pages.
 	 */
-	public static function getAncestorPages($pageTitle, $ancestorPages = []) {
+	public static function getAncestorPages($pageTitle, $ancestorPages) {
 		// Create a Title object for the page.
 		$title = Title::newFromText($pageTitle);
 		if (!empty($title)) {
-			if (!$title->isKnown($pageTitle))
-				return null; //This page doesn't exist
+			if (!$title->isKnown($pageTitle) || array_key_exists($pageTitle, $ancestorPages)) {
+				return $ancestorPages; //This page doesn't exist or is already in the breadcrumb trail--we don't want an infinite loop
+			}
 		} else {
 			return null;
 		}
 		// Find if parent is cached
-		if (array_key_exists($pageTitle, self::$breadcrumbCache)) {
-
-			$ancestorPages[$pageTitle] =  self::$breadcrumbCache[$pageTitle];
+		$pageData = self::loadFromBreadcrumbCache($pageTitle);
+		if (!empty($pageData)) {
+			$ancestorPages[$pageTitle] = $pageData;
 			//Go one level deeper
 			if (!empty($ancestorPages[$pageTitle]['parentTitle'])) {
 				$parentTitle = $ancestorPages[$pageTitle]['parentTitle'];
@@ -255,6 +259,22 @@ class Hooks {
 	}
 
 	/**
+	 * Sanitize the user-input page alias string.
+	 *
+	 * @param string $alias
+	 * @return string
+	 */
+	private static function sanitizeAlias($alias) {
+		// Sanitize $alias and limit its length
+		$maxLength = 255;
+		$alias = trim($alias); // Remove leading/trailing whitespace
+		$alias = mb_substr($alias, 0, $maxLength, 'utf-8'); // Limit to max length
+
+		// Sanitize $alias using wfEscapeWikiText
+		return wfEscapeWikiText($alias);
+	}
+
+	/**
 	 * Inject the breadcrumb HTML into the page output
 	 *
 	 * @param OutputPage $out
@@ -271,52 +291,66 @@ class Hooks {
 	}
 
 	/**
-	 * Breadcrumb cache
-	 * @var array
+	 * @param DatabaseUpdater $updater
+	 * @return bool
 	 */
-	protected static $breadcrumbCache = array();
-
-	/**
-	 * Load breadcrumb cache data using MediaWiki's caching system.
-	 */
-	private static function loadBreadcrumbCache() {
-		// Use MediaWiki's caching system to load the cached breadcrumb data.
-		$cacheKey = 'breadcrumb_cache';
-		$cache = MediaWikiServices::getInstance()->getMainObjectStash();
-
-		$cachedData = $cache->get($cacheKey);
-
-		if ($cachedData !== false) {
-			self::$breadcrumbCache = $cachedData;
-		}
+	public static function onLoadExtensionSchemaUpdates( $updater ) {
+		$updater->addExtensionTable( 'simple_breadcrumb_cache',
+			dirname( __DIR__ ) . '/sql/tables-generated.sql' );
 	}
 
 	/**
-	 * Save breadcrumb cache data using MediaWiki's caching system.
-	 */
-	private static function saveBreadcrumbCache() {		
-		// Use MediaWiki's caching system to save the breadcrumb cache data.
-		$cacheKey = 'breadcrumb_cache';
-		$cache = MediaWikiServices::getInstance()->getMainObjectStash();
-
-		// Save the breadcrumb cache data
-		$cache->set($cacheKey, self::$breadcrumbCache);
-	}
-	
-	/**
-	 * Sanitize the user-input page alias string.
+	 * Save breadcrumb data to the cache database table.
 	 *
-	 * @param string $alias
-	 * @return string
+	 * @param array $pagedata Array with keys 'title', 'alias', 'parentTitle', and 'link'.
 	 */
-	private static function sanitizeAlias($alias) {
-		// Sanitize $alias and limit its length
-		$maxLength = 255;
-		$alias = trim($alias); // Remove leading/trailing whitespace
-		$alias = mb_substr($alias, 0, $maxLength, 'utf-8'); // Limit to max length
+	public static function saveToBreadcrumbCache( $pagedata ) {
+		$dbw = wfGetDB( DB_PRIMARY );
+		$tableName = $dbw->tableName( 'simple_breadcrumb_cache' );
+		$dbw->upsert(
+			$tableName,
+			[
+				'page_ID' => $pagedata['pageID'],
+				'page_title' => $pagedata['title'],
+				'link' => $pagedata['link'],
+				'alias' => $pagedata['alias'],
+				'parent_title' => $pagedata['parentTitle']
+			],
+			[ 'page_ID' ],
+			[
+				'link' => $pagedata['link'],
+				'alias' => $pagedata['alias'],
+				'parent_title' => $pagedata['parentTitle']
+			]
+		);
 
-		// Sanitize $alias using wfEscapeWikiText
-		return wfEscapeWikiText($alias);
+	}
+
+	/**
+	 * Load breadcrumb data from the cache database table.
+	 *
+	 * @param string $pageTitle
+	 * @return array|false $pagedata Array with keys 'title', 'alias', 'parentTitle', and 'link', or false if not found.
+	 */
+	public static function loadFromBreadcrumbCache( $pageTitle ) {
+		$db = MediaWikiServices::getInstance()->getDBLoadBalancer()->getConnection( DB_PRIMARY );
+		$tableName = $db->tableName( 'simple_breadcrumb_cache' );
+
+		$row = $db->selectRow(
+			$tableName,
+			[ 'link', 'alias', 'parent_title' ],
+			[ 'page_title' => $pageTitle ]
+		);
+
+		if ( $row ) {
+			return [
+				'title' => $pageTitle,
+				'link' => $row->link,
+				'alias' => $row->alias,
+				'parentTitle' => $row->parent_title
+			];
+		}
+		return false;
 	}
 }
 ?>
