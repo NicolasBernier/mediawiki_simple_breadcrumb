@@ -1,0 +1,27 @@
+{
+	"name": "SimpleBreadcrumb",
+	"version": "2.0.0",
+	"author": [
+		"[http://techblog.bernier.re Nicolas Bernier]",
+		"Jeffrey C. Parry"
+	],
+	"url": "https://www.mediawiki.org/wiki/Extension:Simple_Breadcrumb",
+	"description": "Parser function implementing a hierarchical breadcrumb.",
+	"license-name": "LGPL-3.0-only",
+	"type": "parserhook",
+	"requires": {
+		"MediaWiki": ">= 1.39.0"
+	},
+	"ExtensionMessagesFiles": {
+		"SimpleBreadcrumb": "SimpleBreadcrumb.i18n.php"
+	},
+	"AutoloadNamespaces": {
+		"MediaWiki\\Extension\\SimpleBreadcrumb\\": "includes/"
+	},
+	"Hooks": {
+		"ParserFirstCallInit": "MediaWiki\\Extension\\SimpleBreadcrumb\\Hooks::onParserFirstCallInit",
+		"OutputPageParserOutput": "MediaWiki\\Extension\\SimpleBreadcrumb\\Hooks::onOutputPageParserOutput",
+		"LoadExtensionSchemaUpdates": "MediaWiki\\Extension\\SimpleBreadcrumb\\Hooks::onLoadExtensionSchemaUpdates"
+	},
+	"manifest_version": 2
+}
